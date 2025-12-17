@@ -149,8 +149,8 @@ export class LiveMatchComponent implements OnInit, OnDestroy {
     /**
    * Contar eventos por tipo
    */
+ 
   getEventCountByType(eventType: string): number {
     return this.events.filter(event => event.eventType === eventType).length;
   }
-
 }
