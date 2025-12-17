@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
-import { LiveMatchComponent } from '../app/features/live-match/live-match.component';
+import { LiveMatchComponent } from './features/live-match/live-match.component';
+import { AdminDashboardComponent } from '../app/features/admin/dashboard/dashboard';
 
 export const routes: Routes = [
   {
@@ -11,5 +12,8 @@ export const routes: Routes = [
     path: 'live-match',
     component: LiveMatchComponent
   },
-  // ... el resto de tus rutas
+  {
+    path: 'admin',
+    component: AdminDashboardComponent
+  }
 ];

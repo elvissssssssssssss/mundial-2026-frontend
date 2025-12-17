@@ -1,0 +1,230 @@
+<div class="admin-container">
+  <!-- features/admin/dashboard/dashboard.component.html -->
+  <div class="admin-header">
+    <h1>🎛️ Panel de Administración - Mundial 2026</h1>
+    <p class="subtitle">Enviar eventos al sistema en tiempo real</p>
+  </div>
+
+  <!-- Main Content -->
+  <div class="admin-content">
+    <!-- Control Panel -->
+    <div class="control-panel">
+      <h2>📤 Enviar Evento</h2>
+
+      <!-- Selector de tipo de evento -->
+      <div class="event-type-selector">
+        <button 
+          *ngFor="let type of ['goal', 'card', 'substitution', 'match-status']"
+          [class.active]="eventType === type"
+          (click)="eventType = type"
+          class="event-type-btn">
+          {{ type === 'goal' ? '⚽ Gol' :
+             type === 'card' ? '🟨 Tarjeta' :
+             type === 'substitution' ? '🔄 Cambio' :
+             '⏱️ Estado' }}
+        </button>
+      </div>
+
+      <!-- Formulario común -->
+      <div class="match-info-section">
+        <h3>🏟️ Seleccionar Partido</h3>
+        
+        <div class="form-group">
+          <label>Partido:</label>
+          <select [(ngModel)]="eventForm.matchId" (change)="onMatchChange()" class="form-control match-select-big">
+            <option *ngFor="let match of availableMatches" [value]="match.id">
+              {{ match.label }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>⏱️ Minuto:</label>
+        <input type="number" [(ngModel)]="eventForm.minute" class="form-control" min="0" max="120">
+      </div>
+
+      <div class="form-group">
+        <label>👕 Equipo del Evento:</label>
+        <select [(ngModel)]="eventForm.team" class="form-control">
+          <option [value]="selectedMatch.homeTeam">
+            {{ getTeamFlag(selectedMatch.homeTeam) }} {{ selectedMatch.homeTeam }} (Local)
+          </option>
+          <option [value]="selectedMatch.awayTeam">
+            {{ getTeamFlag(selectedMatch.awayTeam) }} {{ selectedMatch.awayTeam }} (Visitante)
+          </option>
+        </select>
+      </div>
+
+      <!-- Formulario específico para GOL -->
+      <div *ngIf="eventType === 'goal'" class="event-form">
+        <div class="form-group">
+          <label>⚽ Jugador que anota:</label>
+          <select [(ngModel)]="eventForm.player" class="form-control">
+            <option value="">Selecciona un jugador</option>
+            <option *ngFor="let player of getPlayersForTeam()" [value]="player">
+              {{ player }}
+            </option>
+          </select>
+        </div>
+
+        <div class="score-group">
+          <div class="form-group">
+            <label>{{ getTeamFlag(selectedMatch.homeTeam) }} {{ selectedMatch.homeTeam }} (Local):</label>
+            <input type="number" [(ngModel)]="eventForm.score!.home" class="form-control" min="0">
+          </div>
+          <div class="form-group">
+            <label>{{ getTeamFlag(selectedMatch.awayTeam) }} {{ selectedMatch.awayTeam }} (Visitante):</label>
+            <input type="number" [(ngModel)]="eventForm.score!.away" class="form-control" min="0">
+          </div>
+        </div>
+
+        <button (click)="sendGoal()" [disabled]="isLoading || !eventForm.player" class="submit-btn goal-btn">
+          ⚽ Enviar Gol
+        </button>
+      </div>
+
+      <!-- Formulario específico para TARJETA -->
+      <div *ngIf="eventType === 'card'" class="event-form">
+        <div class="form-group">
+          <label>Jugador:</label>
+          <select [(ngModel)]="eventForm.player" class="form-control">
+            <option value="">Selecciona un jugador</option>
+            <option *ngFor="let player of getPlayersForTeam()" [value]="player">
+              {{ player }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Tipo de Tarjeta:</label>
+          <select [(ngModel)]="eventForm.cardType" class="form-control">
+            <option value="">Selecciona tipo</option>
+            <option *ngFor="let card of cardTypes" [value]="card">
+              {{ card === 'yellow' ? '🟨 Amarilla' : '🟥 Roja' }}
+            </option>
+          </select>
+        </div>
+
+        <button (click)="sendCard()" [disabled]="isLoading || !eventForm.player || !eventForm.cardType" class="submit-btn card-btn">
+          🟨 Enviar Tarjeta
+        </button>
+      </div>
+
+      <!-- Formulario específico para CAMBIO -->
+      <div *ngIf="eventType === 'substitution'" class="event-form">
+        <div class="form-group">
+          <label>Jugador que SALE:</label>
+          <select [(ngModel)]="eventForm.playerOut" class="form-control">
+            <option value="">Selecciona jugador</option>
+            <option *ngFor="let player of getPlayersForTeam()" [value]="player">
+              {{ player }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Jugador que ENTRA:</label>
+          <select [(ngModel)]="eventForm.playerIn" class="form-control">
+            <option value="">Selecciona jugador</option>
+            <option *ngFor="let player of getPlayersForTeam()" [value]="player">
+              {{ player }}
+            </option>
+          </select>
+        </div>
+
+        <button (click)="sendSubstitution()" [disabled]="isLoading || !eventForm.playerOut || !eventForm.playerIn" class="submit-btn sub-btn">
+          🔄 Enviar Cambio
+        </button>
+      </div>
+
+      <!-- Formulario específico para ESTADO -->
+      <div *ngIf="eventType === 'match-status'" class="event-form">
+        <div class="form-group">
+          <label>Estado del Partido:</label>
+          <select [(ngModel)]="eventForm.status" class="form-control">
+            <option value="">Selecciona estado</option>
+            <option *ngFor="let status of matchStatuses" [value]="status">
+              {{ status === 'first_half_start' ? '⏱️ Inicio 1er Tiempo' :
+                 status === 'half_time' ? '☕ Medio Tiempo' :
+                 status === 'second_half_start' ? '⏱️ Inicio 2do Tiempo' :
+                 '🏁 Final' }}
+            </option>
+          </select>
+        </div>
+
+        <button (click)="sendMatchStatus()" [disabled]="isLoading || !eventForm.status" class="submit-btn status-btn">
+          ⏱️ Enviar Estado
+        </button>
+      </div>
+
+      <!-- Loading & Response -->
+      <div *ngIf="isLoading" class="loading">
+        <div class="spinner"></div>
+        <p>Enviando evento...</p>
+      </div>
+
+      <div *ngIf="lastResponse && !isLoading" class="response-box success">
+        <strong>✅ Evento Enviado Correctamente</strong>
+        <pre>{{ lastResponse | json }}</pre>
+      </div>
+
+      <div *ngIf="errorMessage && !isLoading" class="response-box error">
+        <strong>❌ Error al Enviar Evento</strong>
+        <p>{{ errorMessage }}</p>
+      </div>
+    </div>
+
+    <!-- Event History -->
+    <div class="history-panel">
+      <div class="history-header">
+        <h2>📋 Historial de Eventos Enviados</h2>
+        <button *ngIf="sentEvents.length > 0" (click)="clearHistory()" class="clear-history-btn">
+          🗑️ Limpiar
+        </button>
+      </div>
+
+      <div class="history-list">
+        <div *ngIf="sentEvents.length === 0" class="no-history">
+          <p>📭 No hay eventos en el historial</p>
+        </div>
+
+        <div *ngFor="let event of sentEvents; let i = index" class="history-item">
+          <div class="history-header-item">
+            <span class="history-type">
+              {{ event.type === 'goal' ? '⚽' :
+                 event.type === 'card' ? '🟨' :
+                 event.type === 'substitution' ? '🔄' :
+                 '⏱️' }}
+              {{ event.type }}
+            </span>
+            <span class="history-time">{{ event.timestamp | date:'HH:mm:ss' }}</span>
+          </div>
+          <div class="history-details">
+            <strong>Payload:</strong>
+            <pre>{{ event.payload | json }}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <h3>⚡ Acciones Rápidas</h3>
+    <div class="quick-buttons">
+      <button (click)="eventType = 'goal'; eventForm.player = 'Paolo Guerrero'; eventForm.team = 'Peru'" class="quick-btn">
+        ⚽ Gol de Guerrero
+      </button>
+      <button (click)="eventType = 'goal'; eventForm.player = 'Lionel Messi'; eventForm.team = 'Argentina'" class="quick-btn">
+        ⚽ Gol de Messi
+      </button>
+      <button (click)="eventType = 'match-status'; eventForm.status = 'first_half_start'" class="quick-btn">
+        ⏱️ Iniciar Partido
+      </button>
+      <button (click)="eventType = 'match-status'; eventForm.status = 'full_time'" class="quick-btn">
+        🏁 Finalizar Partido
+      </button>
+    </div>
+  </div>
+</div>

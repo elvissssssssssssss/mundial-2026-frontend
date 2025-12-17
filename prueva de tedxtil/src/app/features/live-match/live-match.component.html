@@ -9,11 +9,23 @@
     </div>
   </div>
 
+  <!-- SELECTOR DE PARTIDOS -->
+  <div class="match-selector">
+    <h3>🏟️ Selecciona un Partido:</h3>
+    <select [(ngModel)]="selectedMatchId" (change)="onMatchChange()" class="match-select">
+      <option *ngFor="let match of availableMatches" [value]="match.id">
+        {{ match.homeFlag }} {{ match.homeTeam }} vs {{ match.awayTeam }} {{ match.awayFlag }}
+        - {{ match.stadium }}
+        <span *ngIf="match.status === 'live'"> 🔴 EN VIVO</span>
+      </option>
+    </select>
+  </div>
+
   <!-- Scoreboard -->
-  <div class="scoreboard">
+  <div class="scoreboard" *ngIf="currentMatch">
     <div class="team home">
-      <div class="team-flag">🇵🇪</div>
-      <h2>{{ homeTeam }}</h2>
+      <div class="team-flag">{{ currentMatch.homeFlag }}</div>
+      <h2>{{ currentMatch.homeTeam }}</h2>
       <div class="score">{{ score.home }}</div>
     </div>
     
@@ -23,39 +35,35 @@
     </div>
     
     <div class="team away">
-      <div class="team-flag">🇦🇷</div>
-      <h2>{{ awayTeam }}</h2>
+      <div class="team-flag">{{ currentMatch.awayFlag }}</div>
+      <h2>{{ currentMatch.awayTeam }}</h2>
       <div class="score">{{ score.away }}</div>
     </div>
   </div>
 
   <!-- Stats Summary -->
-  <!-- Stats Summary -->
-<!-- Stats Summary -->
-<div class="stats-summary">
-  <div class="stat-item">
-    <span class="stat-icon">⚽</span>
-    <span class="stat-value">{{ getEventCountByType('goal') }}</span>
-    <span class="stat-label">Goles</span>
+  <div class="stats-summary">
+    <div class="stat-item">
+      <span class="stat-icon">⚽</span>
+      <span class="stat-value">{{ getEventCountByType('goal') }}</span>
+      <span class="stat-label">Goles</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-icon">🟨</span>
+      <span class="stat-value">{{ getEventCountByType('card') }}</span>
+      <span class="stat-label">Tarjetas</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-icon">🔄</span>
+      <span class="stat-value">{{ getEventCountByType('substitution') }}</span>
+      <span class="stat-label">Cambios</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-icon">📋</span>
+      <span class="stat-value">{{ events.length }}</span>
+      <span class="stat-label">Total</span>
+    </div>
   </div>
-  <div class="stat-item">
-    <span class="stat-icon">🟨</span>
-    <span class="stat-value">{{ getEventCountByType('card') }}</span>
-    <span class="stat-label">Tarjetas</span>
-  </div>
-  <div class="stat-item">
-    <span class="stat-icon">🔄</span>
-    <span class="stat-value">{{ getEventCountByType('substitution') }}</span>
-    <span class="stat-label">Cambios</span>
-  </div>
-  <div class="stat-item">
-    <span class="stat-icon">📋</span>
-    <span class="stat-value">{{ events.length }}</span>
-    <span class="stat-label">Total</span>
-  </div>
-</div>
-
-
 
   <!-- Events Section -->
   <div class="events-section">
@@ -72,12 +80,7 @@
 
     <div class="events-list">
       <!-- Lista de eventos -->
-      <div 
-        *ngFor="let event of events; let i = index" 
-        class="event-item" 
-        [ngClass]="getEventClass(event.eventType)"
-        [@slideIn]>
-        
+      <div *ngFor="let event of events" class="event-item" [ngClass]="getEventClass(event.eventType)">
         <span class="event-icon">{{ getEventIcon(event.eventType) }}</span>
         
         <span class="event-minute">{{ event.data?.minute || 0 }}'</span>
